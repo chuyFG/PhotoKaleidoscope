@@ -75,14 +75,35 @@
         ];
         let currentPhotoIndex = 0;
 
-        async function initCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
-            } catch (err) {
-                console.error("Error accessing the camera", err);
-                alert("Error accessing the camera. Please make sure you've granted permission.");
-            }
+
+        async function getVideoDevices() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter(device => device.kind === 'videoinput');
+}
+
+async function initCamera() {
+    try {
+        const videoDevices = await getVideoDevices();
+        let constraints = { video: true }; // Default to any camera
+
+        if (videoDevices.length > 1) {
+            // Assume the last device is the rear camera
+            const rearCamera = videoDevices[videoDevices.length - 1];
+            constraints = {
+                video: {
+                    deviceId: { exact: rearCamera.deviceId },
+                    facingMode: 'environment'
+                }
+            };
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+    } catch (err) {
+        console.error("Error accessing the camera", err);
+        alert("Error accessing the camera. Please make sure you've granted permission.");
+    }
+}
         }
 
         function takePhoto() {
